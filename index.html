@@ -1,0 +1,223 @@
+<!-- 
+  VIN Warrior Task Tracker
+  Author: Suzette-Nicole Young
+  Date: April 2025
+  Description: A gender-neutral, portfolio-ready task tracker using internal CSS, JavaScript, and jQuery.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VIN Warrior Task Tracker</title>
+  <meta name="author" content="Suzette-Nicole Young" />
+  <meta name="description" content="A stylish, gender-neutral task tracker built using HTML, CSS, JavaScript, and jQuery." />
+  <meta name="keywords" content="task tracker, to-do list, HTML CSS JavaScript jQuery, productivity app, VIN Warrior, web developer portfolio" />
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* ===== STYLES: Internal CSS ===== */
+    body {
+      font-family: 'Trebuchet MS', sans-serif;
+      background: url('images/task-tracker.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .tracker-container {
+      max-width: 800px;
+      margin: auto;
+      background: #f8f8f8;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #4a4a4a;
+      margin-bottom: 10px;
+    }
+
+    #task-form input,
+    #task-form textarea,
+    #task-form select,
+    #task-form button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    #filters button {
+      margin: 5px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #dcdcdc;
+      cursor: pointer;
+    }
+
+    #filters button.active {
+      background: #8e44ad;
+      color: white;
+    }
+
+    .task {
+      background: white;
+      border-left: 5px solid #8e44ad;
+      margin-top: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      position: relative;
+    }
+
+    .task.complete {
+      border-left-color: #2ecc71;
+      opacity: 0.7;
+      text-decoration: line-through;
+    }
+
+    .task-actions {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+    }
+
+    .task-actions i {
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #encouragement {
+      text-align: center;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #8e44ad;
+    }
+  </style>
+</head>
+<body>
+  <div class="tracker-container">
+    <h1><i class="fas fa-clipboard-check"></i> Warrior Task Tracker</h1>
+
+    <!-- ====== FORM ====== -->
+    <form id="task-form">
+      <input type="text" id="task-name" placeholder="Task Name" required />
+      <textarea id="task-notes" placeholder="Notes (optional)"></textarea>
+      <select id="task-priority">
+        <option value="low">Low Priority</option>
+        <option value="medium" selected>Medium Priority</option>
+        <option value="high">High Priority</option>
+      </select>
+      <input type="date" id="task-date" />
+      <button type="submit">Add Task</button>
+    </form>
+
+    <!-- ===== FILTERS ===== -->
+    <div id="filters">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="complete">Completed</button>
+      <button data-filter="incomplete">Incomplete</button>
+    </div>
+
+    <!-- ===== TASK LIST ===== -->
+    <div id="task-list"></div>
+    <div id="encouragement"></div>
+  </div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    $(document).ready(function () {
+      const taskList = JSON.parse(localStorage.getItem('tasks')) || [];
+
+      function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(taskList));
+      }
+
+      function displayTasks(filter = "all") {
+        $("#task-list").empty();
+        let shownTasks = taskList.filter(task => {
+          if (filter === "complete") return task.complete;
+          if (filter === "incomplete") return !task.complete;
+          return true;
+        });
+
+        shownTasks.forEach((task, index) => {
+          const taskClass = task.complete ? "task complete" : "task";
+          $("#task-list").append(`
+            <div class="${taskClass}" data-index="${index}">
+              <strong>${task.name}</strong> - ${task.notes}<br/>
+              <small>Priority: ${task.priority} | Due: ${task.date}</small>
+              <div class="task-actions">
+                <i class="fas fa-check" title="Complete"></i>
+                <i class="fas fa-pencil-alt" title="Edit"></i>
+                <i class="fas fa-trash" title="Delete"></i>
+              </div>
+            </div>
+          `);
+        });
+      }
+
+      // Add New Task
+      $("#task-form").on("submit", function (e) {
+        e.preventDefault();
+        const name = $("#task-name").val();
+        const notes = $("#task-notes").val();
+        const priority = $("#task-priority").val();
+        const date = $("#task-date").val();
+
+        if (!name) return;
+
+        taskList.push({ name, notes, priority, date, complete: false });
+        saveTasks();
+        displayTasks();
+        $("#encouragement").text("You did that!");
+        this.reset();
+      });
+
+      // Task Actions
+      $("#task-list").on("click", ".fa-check", function () {
+        const index = $(this).closest(".task").data("index");
+        taskList[index].complete = !taskList[index].complete;
+        saveTasks();
+        displayTasks();
+        $("#encouragement").text("Marked complete — keep going!");
+      });
+
+      $("#task-list").on("click", ".fa-trash", function () {
+        const index = $(this).closest(".task").data("index");
+        taskList.splice(index, 1);
+        saveTasks();
+        displayTasks();
+        $("#encouragement").text("One less thing. You're crushing it!");
+      });
+
+      $("#task-list").on("click", ".fa-pencil-alt", function () {
+        const index = $(this).closest(".task").data("index");
+        const task = taskList[index];
+        $("#task-name").val(task.name);
+        $("#task-notes").val(task.notes);
+        $("#task-priority").val(task.priority);
+        $("#task-date").val(task.date);
+        taskList.splice(index, 1);
+        saveTasks();
+        displayTasks();
+      });
+
+      // Filter Buttons
+      $("#filters button").click(function () {
+        $("#filters button").removeClass("active");
+        $(this).addClass("active");
+        displayTasks($(this).data("filter"));
+      });
+
+      // Load on page start
+      displayTasks();
+    });
+  </script>
+</body>
+</html>
